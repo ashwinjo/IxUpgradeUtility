@@ -45,7 +45,10 @@ def get_target_chassis_information(ip=None, username=None, password=None, target
 def upgrade_target_chassis(ip=None, username=None, password=None,uploadId=None, list_target_chassis_only_dict=None):
     session = IxRestSession(ip, username, password, verbose=False)
     return session.upgrade_target_chassis(uploadId=uploadId, list_target_chassis_only_dict=list_target_chassis_only_dict)
+<<<<<<< controller.py
 
+=======
+>>>>>>> controller.py
 
 
 def upgrade_commander():
@@ -78,7 +81,7 @@ def upgrade_commander():
         logging.info(f"===== Authentication complete for target chassis. Please check at https://{ip}/chassislab/chassisui/settings/ixos-install")
         
         logging.info(f"===== Sleeping for 30 secs to ensure all target chassis complete authentication =====")
-        time.sleep(10)
+        time.sleep(30)
         
         logging.info(f"===== Updating Target Chassis =====")
         try:
@@ -124,3 +127,4 @@ Completed async operation
 Polling for async operation ...
 Completed async operation
 """
+
