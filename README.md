@@ -10,6 +10,8 @@
 </ol>
 <p>Next,  add the entries in config.py files in this repo. There is a sample config already present in there.</p>
 <p>Upload the .tgz version you wish to upgrade to, on your controller chassis using SFTP. </p>
+
+Before running the script, `pip install -r requirments.txt`
 <h1 id="sample-output">Sample Output</h1>
 <pre><code class="language-python">
 (base) ashwjosh@C0HD4NKHCX ixupgradeutility % /usr/local/bin/python3 /Users/ashwjosh/ixupgradeutility/controller.py
