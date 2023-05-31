@@ -9,6 +9,8 @@ import os
 import json
 import time
 import requests
+import logging
+logging.basicConfig(level=logging.INFO)
 
 # handle urllib3 differences between python versions
 if sys.version_info[0] == 2 and ((sys.version_info[1] == 7 and sys.version_info[2] < 9) or sys.version_info[1] < 7):
@@ -289,6 +291,8 @@ class IxRestSession(object):
         
     def upgrade_target_chassis(self, uploadId=None, list_target_chassis_only_dict=None):
         for chassis in list_target_chassis_only_dict:
+            logging.info(f"Upgrade started on {chassis.get('ip')}")
+
             self.extract_and_accept_eula_on_target_chassis(uploadId)
             print(chassis.get('id'))
             out =  self.http_request(
