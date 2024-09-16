@@ -1,3 +1,5 @@
+
+
 import requests
 import json
 import sys
@@ -30,15 +32,19 @@ class IxNRestSessions(object):
         self.timeout = timeout
         self.poll_interval = poll_interval
         self.verbose = verbose
-        # import pdb; pdb.set_trace()
-        if operation == "update":
+
+
+        # Depending upon where you are working with ixNetworkWeb aut URI will change
+        if operation == "updatestandalonevm":
             self._authUri = '/ixnetworkweb/api/v1/auth/session'
-        elif operation == "newinstall":
+        elif operation == "newinstallonchassis":
             self._authUri = '/platform/api/v2/auth/session'
         elif operation == "updateonchassis":
             self._authUri = '/platform/api/v2/auth/session'
-        elif operation == "uninstall":
+        elif operation == "uninstallonchassis":
             self._authUri = '/platform/api/v2/auth/session'
+
+
         self.username = username
         self.password = password
         
@@ -66,11 +72,26 @@ class IxNRestSessions(object):
     def authenticate(self, username="admin", password="admin"):
         """
         we need to obtain API key to be able to perform any REST
-        calls on IxOS
+        calls on IxNetwork platfrom and IxNetwork API;s
         """
         
-        payload = {"password": password, "rememberMe": False, "username": username} 
+        payload = {"password": password, 
+                   "rememberMe": False, 
+                   "username": username} 
         
+        """
+        Note:
+
+        If you are not using strong passoword then update payload as
+
+        payload = {
+            'username': username,
+            'password': password,
+            'rememberMe': False,
+            'resetWeakPassword': False
+        }
+        """
+
         response = self.http_request(
             'POST',
             'https://{address}{uri}'.format(address=self.chassis_ip,
@@ -167,8 +188,14 @@ class IxNRestSessions(object):
             print('Completed async operation')
     
     def upload_file_to_ixnetwork(self, ip=None, file_name=None):
-        url = f"https://{ip}/ixnetworkweb/api/v1/admin/applications/uploads/operations/upload"
+        """Upload the IxNetworkweb .waf file (Docker/ VM/ ESxI )
 
+        Args:
+            ip (_type_, optional): _description_. Defaults to None.
+            file_name (_type_, optional): _description_. Defaults to None.
+        """
+
+        url = f"https://{ip}/ixnetworkweb/api/v1/admin/applications/uploads/operations/upload"
 
         # Path to the file you want to upload
         file_path = file_name
@@ -187,23 +214,35 @@ class IxNRestSessions(object):
             if response.status_code == 200:
                 print('File uploaded successfully!')
                 print('Response:', response.text)
+                self.remote_installer_path = response.data['path']
             else:
                 print('Failed to upload file. Status code:', response.status_code)
                 print('Response:', response.text)
 
-    def install_ixnetwork_versions(self, ip=None, file_name=None):
+    def install_ixnetwork_versions(self, ip=None):
+        """Install the uploaded IxNetworkWeb update .waf (Docker/ VM/ ESxI )
+
+        Args:
+            ip (_type_, optional): _description_. Defaults to None.
+            file_name (_type_, optional): _description_. Defaults to None.
+        """
         url = f"https://{ip}/ixnetworkweb/api/v1/admin/applications/operations/install"
-        payload = {"updateRemotePath": f"/var/tmp/ixia/waf/updates{file_name}",
+        payload = {"updateRemotePath": self.remote_installer_path ,
                    "updateType": "PACKAGE_UPDATE"}
 
-        response = self.http_request('POST', url, payload=payload)
-        print(response)
+        self.http_request('POST', url, payload=payload)
 
     
     def upload_file_for_onchassis_install(self, ip="10.36.237.131", file_name=None):
+        """Upload the IxNetworkweb .waf file (OnChassis Update )
+
+        Args:
+            ip (_type_, optional): _description_. Defaults to None.
+            file_name (_type_, optional): _description_. Defaults to None.
+        """
         url = f"https://{ip}/platform/api/v2/admin/applications/operations/upload"
 
-        file_name = "/Users/ashwjosh/configScripts/ixia-app-ixnetworkweb-10.00.2312.14.el7.x86_64.waf"
+        #file_name = "/Users/ashwjosh/configScripts/ixia-app-ixnetworkweb-10.00.2312.14.el7.x86_64.waf"
         # Path to the file you want to upload
         file_path = file_name
 
@@ -222,13 +261,19 @@ class IxNRestSessions(object):
             if response.status_code == 200:
                 print('File uploaded successfully!')
                 print('Response:', response.text)
+                self.remote_installer_path = response.data['path']
             else:
                 print('Failed to upload file. Status code:', response.status_code)
                 print('Response:', response.text)
 
-    def install_ixnetwork_versions_on_chassis(self, ip=None, file_name=None):
-        path = "/home/ixia_apps/web/platform/server/tmp/updates"+file_name
-        print(path)
+    def install_ixnetwork_versions_on_chassis(self, ip=None):
+        """Install the IxNetworkweb .waf file (OnChassis Update )
+
+        Args:
+            ip (_type_, optional): _description_. Defaults to None.
+            file_name (_type_, optional): _description_. Defaults to None.
+        """
+        path = self.remote_installer_path
         payload = {
                     "updateRemotePath": path,
                     "updateType": "PACKAGE_INSTALL",
@@ -236,16 +281,22 @@ class IxNRestSessions(object):
                     "privacyNoticeAccepted": True
                     }
         url = f"https://{ip}/platform/api/v2/admin/applications/operations/install"
-        response = self.http_request('POST', url, payload=payload)
+        self.http_request('POST', url, payload=payload)
 
     def uninstall_ixnetwork_onchassis(self, ip=None, app_id=None):
+        """Uninstall IxNetwork Web OnChassis Deployment
+
+        Args:
+            ip (_type_, optional): _description_. Defaults to None.
+            app_id (_type_, optional): _description_. Defaults to None.
+        """
         app_url = f"https://{ip}/platform/api/v2/platform/apps?links=false"
         response = self.http_request('GET', app_url)
         for app in response.json():
             if app['name'].lower() == "ixnetworkweb":
                 app_id = app['id']
 
-        url = f"https://10.36.237.131/platform/api/v2/platform/apps/{app_id}/operations/uninstall"
+        url = f"https://{ip}/platform/api/v2/platform/apps/{app_id}/operations/uninstall"
         response = self.http_request('POST', url)
 
 
@@ -259,16 +310,16 @@ def parse_args(ixnetworkwebip, username, password, filepath, operation):
     
     session = IxNRestSessions(chassis_address=ixnetworkwebip, username=username, password=password, operation=operation)
     
-    if operation  == "newinstall":
+    if operation  == "newinstallonchassis":
         session.upload_file_for_onchassis_install(ip=ixnetworkwebip, file_name=filepath)
-        session.install_ixnetwork_versions_on_chassis(ip=ixnetworkwebip, file_name=filepath)
-    elif operation == "update":
+        session.install_ixnetwork_versions_on_chassis(ip=ixnetworkwebip)
+    elif operation == "updatestandalonevm":
         session.upload_file_to_ixnetwork(ip=ixnetworkwebip, file_name=filepath)
-        session.install_ixnetwork_versions(ip=ixnetworkwebip, file_name=filepath)
+        session.install_ixnetwork_versions(ip=ixnetworkwebip)
     elif operation == "updateonchassis":
         session.upload_file_to_ixnetwork(ip=ixnetworkwebip, file_name=filepath)
-        session.install_ixnetwork_versions(ip=ixnetworkwebip, file_name=filepath)
-    elif operation == "uninstall":
+        session.install_ixnetwork_versions(ip=ixnetworkwebip)
+    elif operation == "uninstallonchassis":
         session.uninstall_ixnetwork_onchassis(ip=ixnetworkwebip)
 
 
@@ -313,7 +364,7 @@ Save and note the path of package on local system. In my case it was /Users/ashw
 Run the IxNetworkWeb Updater
 ==============================
 
-python3 ixnetwork_upgrade.py --ixnetworkwebip="10.36.229.70" --username="admin" --password="XXXXXX" --filepath="/Users/ashwjosh/configScripts/ixia-app-ixnetworkweb-vm-update-9.39.2310.23.el7.x86_64.waf"  --operation="update"
+python3 ixNetworkWebUpdater.py --ixnetworkwebip="10.36.229.70" --username="admin" --password="XXXXXX" --filepath="/Users/ashwjosh/configScripts/ixia-app-ixnetworkweb-vm-update-9.39.2310.23.el7.x86_64.waf"  --operation="updatestandalonevm"
 
 Upload Ixia File:
 ==================
@@ -339,7 +390,8 @@ Case 2: On Chassis Workflow
 ***. Install new IxNetwork Version on Chassis
 
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-python3 ixnetwork_upgrade.py --ixnetworkwebip="10.36.237.131" --username="admin" --password='XXXXXX!' --filepath="/Users/ashwjosh/configScripts/ixia-app-ixnetworkweb-10.00.2312.14.el7.x86_64.waf" --operation="newinstall"
+python3 ixNetworkWebUpdater.py --ixnetworkwebip="10.36.237.131" --username="admin" --password='XXXXXX!' --filepath="/Users/ashwjosh/configScripts/ixia-app-ixnetworkweb-10.00.2312.14.el7.x86_64.waf" --operation="newinstallonchassis"
+python3 ixNetworkWebUpdater.py --ixnetworkwebip="10.39.51.127" --username="admin" --password="Keysight@12345" --filepath="C:\ixia-app-ixnetworkweb-10.00.2312.40.el7.x86_64.waf"  --operation="newinstallonchassis" (Windows)
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 File uploaded successfully!
 Response: {"success":true,"details":"Successfully uploaded application update.","path":"/home/ixia_apps/web/platform/server/tmp/updates/Users/ashwjosh/configScripts/ixia-app-ixnetworkweb-10.00.2312.14.el7.x86_64.waf"}
@@ -352,7 +404,9 @@ Completed async operation
 
 ***. Update IxNetwork version on chassis
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-python3 ixnetwork_upgrade.py --ixnetworkwebip="10.36.237.131" --username="admin" --password='XXXXXX!' --filepath="/Users/ashwjosh/configScripts/ixia-app-ixnetworkweb-update-10.00.2312.14.el7.x86_64.waf" --operation="updateonchassis"
+python3 ixNetworkWebUpdater.py --ixnetworkwebip="10.36.237.131" --username="admin" --password='Kimchi123Kimchi123!' --filepath="/Users/ashwjosh/configScripts/ixia-app-ixnetworkweb-update-10.00.2312.14.el7.x86_64.waf" --operation="updateonchassis"
+python3 ixNetworkWebUpdater.py --ixnetworkwebip="10.39.51.127" --username="admin" --password="XXXXXX!" --filepath="C:\ixia-app-ixnetworkweb-update-10.00.2312.40.el7.x86_64.waf"  --operation="updateonchassis" ( Windows)
+
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 File uploaded successfully!
@@ -365,7 +419,7 @@ Completed async operation
 
 ***. Uninstall IxNetwork version on chassis
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-python3 ixnetwork_upgrade.py --ixnetworkwebip="10.36.237.131" --username="admin" --password='XXXXXX!' --filepath="/Users/ashwjosh/configScripts/ixia-app-ixnetworkweb-update-10.00.2312.14.el7.x86_64.waf" --operation="uninstall"
+python3 ixNetworkWebUpdater.py --ixnetworkwebip="10.36.237.131" --username="admin" --password='XXXXXX!' --operation="uninstallonchassis" ( same command for wWndows & Linux)
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 {'id': 10, 'type': 'Remove Application', 'state': 'IN_PROGRESS', 'progress': 0, 'message': 'Operation in progress', 'url': 'https://10.36.237.131/platform/api/v2/platform/apps/5/operations/uninstall/10'}
