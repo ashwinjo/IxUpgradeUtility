@@ -40,6 +40,106 @@ Polling for async operation ...
 Completed async operation
 22
 Polling for async operation ...
-<<<<<<< HEAD
+
 Completed async operation
-</code></pre>
+
+-----------------------------------
+Pre-requisites:
+
+pip3 install 
+requests
+json
+urllib3
+click
+
+==========
+On Chassis
+==========
+Upload: Tested
+Install: Tested
+Uninstall: Tested
+Update: Tested
+
+=============
+KVM/ESXI/Docker
+=============
+Upload: Tested
+Install:  Tested
+
+----------------------------------------------------
+Case 1: Standalone IxNetworkWeb upload and install
+-----------------------------------------------------
+
+Go to : https://support.ixiacom.com/version/ixnetwork-1020 ( You can choose your specific version) and then download package that says
+"Update existing deployment:" --> "KVM/ESXi/Docker deployment updater"
+
+
+Save and note the path of package on local system. In my case it was /Users/ashwjosh/configScripts/ixia-app-ixnetworkweb-vm-update-10.00.2312.14.el7.x86_64.waf
+
+
+Run the IxNetworkWeb Updater
+==============================
+
+python3 ixNetworkWebUpdater.py --ixnetworkwebip="10.36.229.70" --username="admin" --password="XXXXXX" --filepath="/Users/ashwjosh/configScripts/ixia-app-ixnetworkweb-vm-update-9.39.2310.23.el7.x86_64.waf"  --operation="updatestandalonevm"
+
+Upload Ixia File:
+==================
+File uploaded successfully!
+Response: {"success":true,"details":"Successfully uploaded application update.","path":"/var/tmp/ixia/waf/updates/Users/ashwjosh/configScripts/ixia-app-ixnetworkweb-vm-update-9.39.2310.23.el7.x86_64.waf"}
+
+Chassis upgrading:
+=================
+
+{'id': 3, 'type': 'Package Installation', 'state': 'IN_PROGRESS', 'progress': 0, 'message': 'Operation in progress', 'url': 'https://10.36.229.70/ixnetworkweb/api/v1/admin/applications/operations/install/3', 'updateApplicationArgs': {'updateRemotePath': '/var/tmp/ixia/waf/updates/Users/ashwjosh/configScripts/ixia-app-ixnetworkweb-vm-update-9.39.2310.23.el7.x86_64.waf', 'updateSlotsList': [], 'updateType': 'PACKAGE_UPDATE', 'persistent': False}}
+Polling for async operation ...
+.
+.
+.
+.
+
+< Chassis goes down and comes up >
+
+
+----------------------------------------------------
+Case 2: On Chassis Workflow
+-----------------------------------------------------
+***. Install new IxNetwork Version on Chassis
+
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+python3 ixNetworkWebUpdater.py --ixnetworkwebip="10.36.237.131" --username="admin" --password='XXXXXX!' --filepath="/Users/ashwjosh/configScripts/ixia-app-ixnetworkweb-10.00.2312.14.el7.x86_64.waf" --operation="newinstallonchassis"
+python3 ixNetworkWebUpdater.py --ixnetworkwebip="10.39.51.127" --username="admin" --password="Keysight@12345" --filepath="C:\ixia-app-ixnetworkweb-10.00.2312.40.el7.x86_64.waf"  --operation="newinstallonchassis" (Windows)
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+File uploaded successfully!
+Response: {"success":true,"details":"Successfully uploaded application update.","path":"/home/ixia_apps/web/platform/server/tmp/updates/Users/ashwjosh/configScripts/ixia-app-ixnetworkweb-10.00.2312.14.el7.x86_64.waf"}
+
+/home/ixia_apps/web/platform/server/tmp/updates/Users/ashwjosh/configScripts/ixia-app-ixnetworkweb-10.00.2312.14.el7.x86_64.waf
+{'id': 8, 'type': 'Package Installation', 'state': 'IN_PROGRESS', 'progress': 0, 'message': 'Operation in progress', 'url': 'https://10.36.237.131/platform/api/v2/admin/applications/operations/install/8', 'updateApplicationArgs': {'updateRemotePath': '/home/ixia_apps/web/platform/server/tmp/updates/Users/ashwjosh/configScripts/ixia-app-ixnetworkweb-10.00.2312.14.el7.x86_64.waf', 'updateSlotsList': [], 'updateType': 'PACKAGE_INSTALL', 'persistent': True, 'privacyNoticeAccepted': True}}
+Polling for async operation ...
+Completed async operation
+
+
+***. Update IxNetwork version on chassis
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+python3 ixNetworkWebUpdater.py --ixnetworkwebip="10.36.237.131" --username="admin" --password='Kimchi123Kimchi123!' --filepath="/Users/ashwjosh/configScripts/ixia-app-ixnetworkweb-update-10.00.2312.14.el7.x86_64.waf" --operation="updateonchassis"
+python3 ixNetworkWebUpdater.py --ixnetworkwebip="10.39.51.127" --username="admin" --password="XXXXXX!" --filepath="C:\ixia-app-ixnetworkweb-update-10.00.2312.40.el7.x86_64.waf"  --operation="updateonchassis" ( Windows)
+
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+File uploaded successfully!
+Response: {"success":true,"details":"Successfully uploaded application update.","path":"/var/tmp/ixia/waf/updates/Users/ashwjosh/configScripts/ixia-app-ixnetworkweb-update-10.00.2312.14.el7.x86_64.waf"}
+
+{'id': 2, 'type': 'Package Installation', 'state': 'IN_PROGRESS', 'progress': 0, 'message': 'Operation in progress', 'url': 'https://10.36.237.131/ixnetworkweb/api/v1/admin/applications/operations/install/2', 'updateApplicationArgs': {'updateRemotePath': '/var/tmp/ixia/waf/updates/Users/ashwjosh/configScripts/ixia-app-ixnetworkweb-update-10.00.2312.14.el7.x86_64.waf', 'updateSlotsList': [], 'updateType': 'PACKAGE_UPDATE', 'persistent': False}}
+Polling for async operation ...
+Completed async operation
+
+
+***. Uninstall IxNetwork version on chassis
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+python3 ixNetworkWebUpdater.py --ixnetworkwebip="10.36.237.131" --username="admin" --password='XXXXXX!' --operation="uninstallonchassis" ( same command for wWndows & Linux)
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+{'id': 10, 'type': 'Remove Application', 'state': 'IN_PROGRESS', 'progress': 0, 'message': 'Operation in progress', 'url': 'https://10.36.237.131/platform/api/v2/platform/apps/5/operations/uninstall/10'}
+Polling for async operation ...
+Completed async operation
+------------------------------
+
